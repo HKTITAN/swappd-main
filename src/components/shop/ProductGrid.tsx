@@ -482,6 +482,8 @@ const ProductCard = ({ product }: { product: ShopProduct }) => {
                 <p className="text-xs text-monochrome-500">{product.brand}</p>
                 <span className="mx-2 text-xs text-monochrome-300">•</span>
                 <p className="text-xs text-monochrome-500">{product.condition}</p>
+                <span className="mx-2 text-xs text-monochrome-300">•</span>
+                <p className="text-xs text-monochrome-500">Size: {product.size}</p>
               </div>
             </div>
           </CardContent>

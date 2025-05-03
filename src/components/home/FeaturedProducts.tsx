@@ -17,28 +17,40 @@ const products = [
     name: "Vintage Denim Jacket",
     price: 120,
     image: "https://images.unsplash.com/photo-1527576539890-dfa815648363?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Outerwear"
+    category: "Outerwear",
+    size: "M",
+    brand: "Levi's",
+    condition: "Excellent"
   },
   {
     id: 2,
     name: "Monochrome Striped Shirt",
     price: 75,
     image: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Tops"
+    category: "Tops",
+    size: "S",
+    brand: "H&M",
+    condition: "Good"
   },
   {
     id: 3,
     name: "Classic Black Jeans",
     price: 90,
     image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800", 
-    category: "Bottoms"
+    category: "Bottoms",
+    size: "32",
+    brand: "Zara",
+    condition: "Like New"
   },
   {
     id: 4,
     name: "Minimalist Wool Coat",
     price: 185,
     image: "https://images.unsplash.com/photo-1452960962994-acf4fd70b632?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Outerwear"
+    category: "Outerwear",
+    size: "L",
+    brand: "COS",
+    condition: "Excellent"
   }
 ];
 
@@ -56,10 +68,17 @@ const ProductCard = ({ product }: { product: typeof products[0] }) => (
         </div>
         <div className="p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-monochrome-500">{product.category}</p>
-            <p className="text-sm font-mono">{product.price} coins</p>
+            <p className="text-sm text-monochrome-500 bg-monochrome-100 px-2 py-1 rounded-full truncate max-w-[120px]">{product.category}</p>
+            <p className="text-sm font-mono font-semibold">{product.price} coins</p>
           </div>
-          <h3 className="mt-2 font-medium">{product.name}</h3>
+          <h3 className="mt-2 font-medium text-base line-clamp-2">{product.name}</h3>
+          <div className="flex items-center mt-2">
+            <p className="text-xs text-monochrome-500">{product.brand}</p>
+            <span className="mx-2 text-xs text-monochrome-300">•</span>
+            <p className="text-xs text-monochrome-500">{product.condition}</p>
+            <span className="mx-2 text-xs text-monochrome-300">•</span>
+            <p className="text-xs text-monochrome-500">Size: {product.size}</p>
+          </div>
         </div>
       </CardContent>
     </Card>

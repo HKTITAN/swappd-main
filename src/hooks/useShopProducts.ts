@@ -78,8 +78,11 @@ export const useShopProducts = (categoryFilter?: string, searchQuery: string = '
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 500));
         
+        // Only use available items
+        const availableItems = mockClothingItems.filter(item => item.isAvailable);
+        
         // Map mock items to shop product format
-        const shopProducts = mockClothingItems.map(mapMockItemToShopProduct);
+        const shopProducts = availableItems.map(mapMockItemToShopProduct);
         
         // Apply category filter if provided
         let filteredProducts = shopProducts;

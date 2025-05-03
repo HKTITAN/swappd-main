@@ -93,7 +93,7 @@ export const mockClothingItems: ClothingItem[] = [
     ],
     tags: ['denim', 'vintage', '90s', 'retro'],
     dateAdded: '2025-04-20',
-    isAvailable: true
+    isAvailable: false
   },
   {
     id: '1003',
@@ -275,7 +275,7 @@ export const mockClothingItems: ClothingItem[] = [
     ],
     tags: ['wool', 'camel', 'luxury', 'winter', 'classic'],
     dateAdded: '2025-03-15',
-    isAvailable: true
+    isAvailable: false
   },
   {
     id: '4003',
@@ -297,7 +297,7 @@ export const mockClothingItems: ClothingItem[] = [
     ],
     tags: ['blazer', 'workwear', 'tailored', 'smart', 'versatile'],
     dateAdded: '2025-04-18',
-    isAvailable: true
+    isAvailable: false
   },
   
   // Activewear
@@ -321,7 +321,7 @@ export const mockClothingItems: ClothingItem[] = [
     ],
     tags: ['workout', 'yoga', 'running', 'athleisure', 'performance'],
     dateAdded: '2025-04-25',
-    isAvailable: true
+    isAvailable: false
   },
   {
     id: '5002',
@@ -343,7 +343,7 @@ export const mockClothingItems: ClothingItem[] = [
     ],
     tags: ['running', 'technical', 'reflective', 'waterproof', 'workout'],
     dateAdded: '2025-04-02',
-    isAvailable: true
+    isAvailable: false
   },
   
   // Accessories
