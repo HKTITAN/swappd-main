@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Database, Flag, ChartBar, MessageSquare, AlertTriangle, Search } from "lucide-react";
+import { Database, Flag, ChartBar, MessageSquare, AlertTriangle, Search, Package } from "lucide-react";
 
 import { DashboardStats } from "@/components/admin/DashboardStats";
+import { InventoryManager } from "@/components/admin/InventoryManager";
 import { UsersTab } from "@/components/admin/tabs/UsersTab";
 import { ItemsTab } from "@/components/admin/tabs/ItemsTab";
 import { TransactionsTab } from "@/components/admin/tabs/TransactionsTab";
@@ -14,224 +15,103 @@ import { AnalyticsTab } from "@/components/admin/tabs/AnalyticsTab";
 import { SettingsTab } from "@/components/admin/tabs/SettingsTab";
 import { PlaceholderTab } from "@/components/admin/tabs/PlaceholderTab";
 import { AdminTabsList } from "@/components/admin/AdminTabsList";
+
+// Import the real-time data hooks
 import { useAdminData } from "@/hooks/useAdminData";
+import { useTransactionsData } from "@/hooks/useTransactionsData";
+import { useReportsData } from "@/hooks/useReportsData";
+import { useAnalyticsData } from "@/hooks/useAnalyticsData";
+import { useSettingsData } from "@/hooks/useSettingsData";
+import { useInventoryData } from "@/hooks/useInventoryData";
+
 import { toast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const Admin = () => {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Use the real-time data hooks
   const { filteredUsers, filteredItems, reports } = useAdminData(searchQuery);
+  const { transactions, loading: transactionsLoading } = useTransactionsData(searchQuery);
+  const { 
+    reports: userReports, 
+    loading: reportsLoading, 
+    updateReportStatus, 
+    submitReportReply 
+  } = useReportsData(searchQuery);
   
-  // Mock data for new tabs
-  const mockTransactions = [
-    {
-      id: "tx-001",
-      user_id: "user-001",
-      username: "johndoe",
-      amount: 500,
-      type: "credit" as const,
-      description: "Item sold: Vintage Denim Jacket",
-      created_at: new Date(2025, 3, 28).toISOString(),
-      status: "completed"
-    },
-    {
-      id: "tx-002",
-      user_id: "user-002",
-      username: "janedoe",
-      amount: 300,
-      type: "debit" as const,
-      description: "Item purchased: Classic Black Jeans",
-      created_at: new Date(2025, 3, 27).toISOString(),
-      status: "completed"
-    },
-    {
-      id: "tx-003",
-      user_id: "user-003",
-      username: "mikesmith",
-      amount: 1000,
-      type: "credit" as const,
-      description: "Purchased SwapCoins",
-      created_at: new Date(2025, 3, 26).toISOString(),
-      status: "completed"
-    },
-    {
-      id: "tx-004",
-      user_id: "user-001",
-      username: "johndoe",
-      amount: 250,
-      type: "debit" as const,
-      description: "Item purchased: White T-Shirt",
-      created_at: new Date(2025, 3, 25).toISOString(),
-      status: "completed"
-    },
-    {
-      id: "tx-005",
-      user_id: "user-004",
-      username: "sarahconnor",
-      amount: 400,
-      type: "credit" as const,
-      description: "Item sold: Graphic Print Hoodie",
-      created_at: new Date(2025, 3, 24).toISOString(),
-      status: "pending"
-    }
-  ];
+  const analyticsData = useAnalyticsData();
+  const { 
+    general: generalSettings,
+    swapcoins: swapcoinsSettings,
+    notifications: notificationSettings,
+    loading: settingsLoading,
+    updateSettings
+  } = useSettingsData();
 
-  const mockAnalyticsData = {
-    userGrowth: [
-      { date: 'Jan 2025', count: 120 },
-      { date: 'Feb 2025', count: 180 },
-      { date: 'Mar 2025', count: 240 },
-      { date: 'Apr 2025', count: 310 },
-    ],
-    itemsByCategory: [
-      { category: 'Tops', count: 450 },
-      { category: 'Bottoms', count: 320 },
-      { category: 'Outerwear', count: 280 },
-      { category: 'Footwear', count: 210 },
-      { category: 'Accessories', count: 180 },
-    ],
-    transactionVolume: [
-      { date: 'Jan 2025', volume: 12500 },
-      { date: 'Feb 2025', volume: 18700 },
-      { date: 'Mar 2025', volume: 22400 },
-      { date: 'Apr 2025', volume: 28900 },
-    ],
-    userActivity: [
-      { date: 'Apr 24', active_users: 85 },
-      { date: 'Apr 25', active_users: 92 },
-      { date: 'Apr 26', active_users: 78 },
-      { date: 'Apr 27', active_users: 110 },
-      { date: 'Apr 28', active_users: 98 },
-      { date: 'Apr 29', active_users: 115 },
-      { date: 'Apr 30', active_users: 120 },
-    ]
-  };
+  // Use inventory data hook
+  const {
+    shopItems,
+    loading: inventoryLoading,
+    error: inventoryError,
+  } = useInventoryData();
 
-  const mockReports = [
-    {
-      id: "rep-001",
-      user_id: "user-005",
-      username: "davidwilson",
-      report_type: "Item Issue",
-      reported_item_id: "item-001",
-      reported_user_id: null,
-      subject: "Item condition doesn't match description",
-      description: "The item I received was marked as 'like new' but has visible wear and tear. The seller's description wasn't accurate.",
-      status: "open" as const,
-      priority: "high" as const,
-      created_at: new Date(2025, 3, 28).toISOString(),
-      updated_at: new Date(2025, 3, 28).toISOString()
-    },
-    {
-      id: "rep-002",
-      user_id: "user-006",
-      username: "emilybrown",
-      report_type: "User Behavior",
-      reported_item_id: null,
-      reported_user_id: "user-007",
-      subject: "User sent inappropriate messages",
-      description: "This user has been sending inappropriate messages when I attempted to arrange a swap. I've included screenshots in my email.",
-      status: "investigating" as const,
-      priority: "critical" as const,
-      created_at: new Date(2025, 3, 27).toISOString(),
-      updated_at: new Date(2025, 3, 29).toISOString()
-    },
-    {
-      id: "rep-003",
-      user_id: "user-008",
-      username: "alexnguyen",
-      report_type: "Platform Issue",
-      reported_item_id: null,
-      reported_user_id: null,
-      subject: "Payment system error",
-      description: "I tried to purchase SwapCoins but my payment was processed twice. Please help resolve this and refund the extra charge.",
-      status: "resolved" as const,
-      priority: "high" as const,
-      created_at: new Date(2025, 3, 25).toISOString(),
-      updated_at: new Date(2025, 3, 26).toISOString()
-    },
-    {
-      id: "rep-004",
-      user_id: "user-009",
-      username: "sarahjones",
-      report_type: "Item Issue",
-      reported_item_id: "item-002",
-      reported_user_id: null,
-      subject: "Item never arrived",
-      description: "I purchased this item two weeks ago but it never arrived. The tracking number provided doesn't work.",
-      status: "open" as const,
-      priority: "medium" as const,
-      created_at: new Date(2025, 3, 22).toISOString(),
-      updated_at: new Date(2025, 3, 22).toISOString()
-    },
-    {
-      id: "rep-005",
-      user_id: "user-010",
-      username: "robertlee",
-      report_type: "Other",
-      reported_item_id: null,
-      reported_user_id: null,
-      subject: "Feature request",
-      description: "It would be great if we could filter items by multiple categories at once. Just a suggestion for improving the platform.",
-      status: "closed" as const,
-      priority: "low" as const,
-      created_at: new Date(2025, 3, 20).toISOString(),
-      updated_at: new Date(2025, 3, 21).toISOString()
-    }
-  ];
+  // Combine all items including shop inventory items
+  const allItems = [...filteredItems, ...shopItems.filter(item => 
+    !filteredItems.some(fi => fi.id === item.id)
+  )];
 
-  // Mock settings data
-  const mockSettings = {
-    general: {
-      siteName: "SwapPD",
-      siteDescription: "A sustainable fashion platform for swapping clothes and accessories",
-      maintenanceMode: false,
-      itemsPerPage: 12,
-      defaultCurrency: "USD"
-    },
-    swapcoins: {
-      conversionRate: 10, // $1 = 10 SwapCoins
-      minSwapcoins: 100,
-      maxSwapcoins: 10000,
-      enablePurchase: true
-    },
-    notifications: {
-      enableEmailNotifications: true,
-      enablePushNotifications: false,
-      newUserWelcomeMessage: "Welcome to SwapPD! Start by adding your first item to swap.",
-      itemApprovedTemplate: "Good news! Your item {item_name} has been approved and is now listed on the platform.",
-      itemRejectedTemplate: "We're sorry, but your item {item_name} has been rejected. Reason: {rejection_reason}"
-    }
-  };
-  
   // Handle report status changes
-  const handleReportStatusChange = (reportId: string, status: string) => {
-    toast({
-      title: "Report status updated",
-      description: `Report #${reportId.substring(0, 6)} has been marked as ${status}.`,
-    });
-    // In a real app, you would update the database here
+  const handleReportStatusChange = async (reportId: string, status: string) => {
+    const result = await updateReportStatus(reportId, status);
+    if (result.success) {
+      toast({
+        title: "Report status updated",
+        description: `Report #${reportId.substring(0, 6)} has been marked as ${status}.`,
+      });
+    } else {
+      toast({
+        title: "Update failed",
+        description: result.error || "Failed to update report status",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle report replies
-  const handleReportReply = (reportId: string, message: string) => {
-    toast({
-      title: "Reply sent",
-      description: "Your response has been sent to the user.",
-    });
-    // In a real app, you would send the reply to the user and update the database
+  const handleReportReply = async (reportId: string, message: string) => {
+    const result = await submitReportReply(reportId, message);
+    if (result.success) {
+      toast({
+        title: "Reply sent",
+        description: "Your response has been sent to the user.",
+      });
+    } else {
+      toast({
+        title: "Failed to send reply",
+        description: result.error || "An error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle settings updates
-  const handleSaveSettings = (settingsKey: string, data: any) => {
-    toast({
-      title: "Settings updated",
-      description: `${settingsKey.charAt(0).toUpperCase() + settingsKey.slice(1)} settings have been saved.`,
-    });
-    // In a real app, you would update the database here
-    console.log(`Updated ${settingsKey} settings:`, data);
+  const handleSaveSettings = async (settingsKey: "general" | "swapcoins" | "notifications", data: any) => {
+    const result = await updateSettings(settingsKey, data);
+    if (result.success) {
+      toast({
+        title: "Settings updated",
+        description: `${settingsKey.charAt(0).toUpperCase() + settingsKey.slice(1)} settings have been saved.`,
+      });
+    } else {
+      toast({
+        title: "Update failed",
+        description: result.error || `Failed to update ${settingsKey} settings`,
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isAdmin) {
@@ -258,11 +138,11 @@ const Admin = () => {
           </div>
         </div>
 
-        <DashboardStats
-          totalUsers={reports.total_users}
-          totalItems={reports.total_items}
-          totalSwapcoins={reports.total_swapcoins}
-        />
+        {/* Real-time dashboard stats */}
+        <DashboardStats />
+        
+        {/* Add inventory manager */}
+        <InventoryManager />
 
         <div className="rounded-lg border bg-card">
           <Tabs defaultValue="users" className="space-y-4">
@@ -276,28 +156,52 @@ const Admin = () => {
               </TabsContent>
 
               <TabsContent value="items" className="m-0">
-                <ItemsTab items={filteredItems} />
+                {inventoryLoading ? (
+                  <div className="flex justify-center items-center py-20">
+                    <LoadingSpinner size="large" />
+                  </div>
+                ) : (
+                  <ItemsTab items={allItems} />
+                )}
               </TabsContent>
 
               <TabsContent value="transactions" className="m-0">
-                <TransactionsTab transactions={mockTransactions} />
+                {transactionsLoading ? (
+                  <div className="flex justify-center items-center py-20">
+                    <LoadingSpinner size="large" />
+                  </div>
+                ) : (
+                  <TransactionsTab transactions={transactions} />
+                )}
               </TabsContent>
 
               <TabsContent value="reports" className="m-0">
-                <ReportsTab 
-                  reports={mockReports} 
-                  onStatusChange={handleReportStatusChange} 
-                  onReplySubmit={handleReportReply} 
-                />
+                {reportsLoading ? (
+                  <div className="flex justify-center items-center py-20">
+                    <LoadingSpinner size="large" />
+                  </div>
+                ) : (
+                  <ReportsTab 
+                    reports={userReports} 
+                    onStatusChange={handleReportStatusChange} 
+                    onReplySubmit={handleReportReply} 
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="analytics" className="m-0">
-                <AnalyticsTab 
-                  userGrowth={mockAnalyticsData.userGrowth}
-                  itemsByCategory={mockAnalyticsData.itemsByCategory}
-                  transactionVolume={mockAnalyticsData.transactionVolume}
-                  userActivity={mockAnalyticsData.userActivity}
-                />
+                {analyticsData.loading ? (
+                  <div className="flex justify-center items-center py-20">
+                    <LoadingSpinner size="large" />
+                  </div>
+                ) : (
+                  <AnalyticsTab 
+                    userGrowth={analyticsData.userGrowth}
+                    itemsByCategory={analyticsData.itemsByCategory}
+                    transactionVolume={analyticsData.transactionVolume}
+                    userActivity={analyticsData.userActivity}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="messages" className="m-0">
@@ -317,10 +221,20 @@ const Admin = () => {
               </TabsContent>
 
               <TabsContent value="settings" className="m-0">
-                <SettingsTab 
-                  settings={mockSettings}
-                  onSaveSettings={handleSaveSettings}
-                />
+                {settingsLoading ? (
+                  <div className="flex justify-center items-center py-20">
+                    <LoadingSpinner size="large" />
+                  </div>
+                ) : (
+                  <SettingsTab 
+                    settings={{
+                      general: generalSettings,
+                      swapcoins: swapcoinsSettings,
+                      notifications: notificationSettings
+                    }}
+                    onSaveSettings={handleSaveSettings}
+                  />
+                )}
               </TabsContent>
             </div>
           </Tabs>

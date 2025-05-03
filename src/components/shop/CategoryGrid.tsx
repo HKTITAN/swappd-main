@@ -1,4 +1,3 @@
-
 import { 
   ShoppingBag, 
   ShoppingCart, 
@@ -15,6 +14,7 @@ import { useState } from "react";
 interface CategoryGridProps {
   activeCategory: string;
   onCategoryChange: (category: string) => void;
+  isMobile?: boolean;
 }
 
 const categories = [
@@ -27,13 +27,42 @@ const categories = [
   { name: "Shoes", icon: Briefcase },
 ];
 
-const CategoryGrid = ({ activeCategory, onCategoryChange }: CategoryGridProps) => {
+const CategoryGrid = ({ activeCategory, onCategoryChange, isMobile = false }: CategoryGridProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
 
+  // For mobile, create a horizontal scrollable list of category buttons
+  if (isMobile) {
+    return (
+      <div className="flex space-x-2 overflow-x-auto pb-2 hide-scrollbar">
+        {categories.map((category) => {
+          const Icon = category.icon;
+          return (
+            <Button
+              key={category.name}
+              variant={activeCategory === category.name ? "default" : "outline"}
+              className={`
+                flex-shrink-0 py-2 px-3 flex items-center gap-1.5 rounded-full
+                transition-all duration-200
+                ${activeCategory === category.name 
+                  ? "bg-monochrome-900 text-white" 
+                  : "border-monochrome-200 bg-white"}
+              `}
+              onClick={() => onCategoryChange(category.name)}
+            >
+              {Icon && <Icon className="h-4 w-4" />}
+              <span className="font-medium">{category.name}</span>
+            </Button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Desktop view with expandable grid
   return (
     <div className="mb-8">
       <Button 

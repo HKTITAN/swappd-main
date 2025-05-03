@@ -1,80 +1,155 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, ChevronLeft } from "lucide-react";
+import { ShoppingCart, ChevronLeft, Loader2 } from "lucide-react";
+import { useShopProducts, ShopProduct } from "@/hooks/useShopProducts";
+import { useCart } from "@/hooks/useCart";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock product data - would come from API in real implementation
-const products = [
-  {
-    id: "1",
-    name: "Vintage Denim Jacket",
-    price: 120,
-    images: [
-      "https://images.unsplash.com/photo-1527576539890-dfa815648363?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    ],
-    category: "Outerwear",
-    size: "Medium",
-    condition: "Good",
-    description: "A classic vintage denim jacket with subtle distressing. Perfect for layering in almost any season. Shows minimal signs of wear with no major flaws.",
-    originalPrice: 200
-  },
-  {
-    id: "2",
-    name: "Monochrome Striped Shirt",
-    price: 75,
-    images: [
-      "https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    ],
-    category: "Tops",
-    size: "Large",
-    condition: "Like New",
-    description: "Minimalist black and white striped button-up shirt. Relaxed fit with clean lines. Barely worn, in excellent condition.",
-    originalPrice: 120
-  },
-  {
-    id: "3",
-    name: "Classic Black Jeans",
-    price: 90,
-    images: [
-      "https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    ],
-    category: "Bottoms",
-    size: "32",
-    condition: "Good",
-    description: "Timeless black jeans in a straight-leg cut. Versatile staple for any wardrobe. Shows light fading but no rips or tears.",
-    originalPrice: 150
-  },
-  {
-    id: "4",
-    name: "Minimalist Wool Coat",
-    price: 185,
-    images: [
-      "https://images.unsplash.com/photo-1452960962994-acf4fd70b632?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    ],
-    category: "Outerwear",
-    size: "Small",
-    condition: "Like New",
-    description: "Elegant wool coat in a clean, minimalist design. Subtle texture and excellent warmth. Only worn a handful of times, in excellent condition.",
-    originalPrice: 320
-  }
-];
+// Interface to match the actual database structure
+interface SupabaseItem {
+  id: string;
+  title: string;
+  category: string;
+  condition: string;
+  description: string | null;
+  image_url: string | null;
+  size: string;
+  status: string;
+  swapcoins: number;
+  user_id: string;
+  created_at: string;
+  price?: number;
+  images?: string[];
+  sku?: string;
+  stock_quantity?: number;
+  is_shop_item?: boolean;
+}
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const { toast } = useToast();
-  const product = products.find((p) => p.id === productId);
+  const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [product, setProduct] = useState<ShopProduct | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   
-  const handleAddToCart = () => {
-    toast({
-      title: "Added to cart",
-      description: `${product?.name} has been added to your cart`,
-    });
+  // Fetch product data
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!productId) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: supabaseError } = await supabase
+          .from('items')
+          .select('*')
+          .eq('id', productId)
+          .eq('is_shop_item', true)
+          .single();
+
+        if (supabaseError) throw supabaseError;
+        
+        if (!data) {
+          setError('Product not found');
+          return;
+        }
+
+        const item = data as SupabaseItem;
+        
+        // Transform to ShopProduct type
+        setProduct({
+          id: item.id,
+          name: item.title,
+          title: item.title,
+          price: item.swapcoins || 0,
+          image: item.image_url || '/placeholder.svg',
+          images: item.images || [item.image_url || '/placeholder.svg'],
+          category: item.category,
+          size: item.size || 'N/A',
+          condition: item.condition,
+          description: item.description || '',
+          sku: item.sku || '',
+          stock_quantity: item.stock_quantity || 0
+        });
+        
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to load product');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProduct();
+  }, [productId]);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    
+    try {
+      setIsAddingToCart(true);
+      await addToCart(product.id);
+      
+      toast({
+        title: "Added to cart",
+        description: `${product.name} has been added to your cart`,
+      });
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add item to cart",
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
   
-  if (!product) {
+  if (loading) {
+    return (
+      <div className="container py-12">
+        <Link to="/shop" className="inline-flex items-center mb-6 text-monochrome-600 hover:text-monochrome-900">
+          <ChevronLeft className="mr-1 h-4 w-4" />
+          Back to Shop
+        </Link>
+        
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Product Images Skeleton */}
+          <div className="space-y-4">
+            <Skeleton className="aspect-square overflow-hidden rounded-2xl w-full" />
+            <div className="grid grid-cols-5 gap-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-xl w-full" />
+              ))}
+            </div>
+          </div>
+          
+          {/* Product Info Skeleton */}
+          <div className="space-y-6">
+            <div>
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-10 w-3/4 mb-4" />
+              <Skeleton className="h-6 w-40" />
+            </div>
+            
+            <Skeleton className="h-32 w-full" />
+            
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error || !product) {
     return (
       <div className="container py-12 text-center">
         <p className="mb-4">Product not found</p>
@@ -88,7 +163,9 @@ const ProductDetail = () => {
     );
   }
   
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  const discount = product.price > 0 
+    ? Math.round(((product.price * 1.25 - product.price) / (product.price * 1.25)) * 100) 
+    : 0;
   
   return (
     <div className="container py-12">
@@ -136,10 +213,12 @@ const ProductDetail = () => {
             <h1 className="mt-2 text-2xl font-medium sm:text-3xl">{product.name}</h1>
             <div className="mt-4 flex items-center">
               <span className="mr-2 font-mono text-xl font-bold">{product.price} coins</span>
-              <span className="text-sm text-monochrome-500 line-through">{product.originalPrice} coins</span>
-              <span className="ml-2 rounded-full bg-monochrome-900 px-2 py-0.5 text-xs font-medium text-white">
-                {discount}% OFF
-              </span>
+              <span className="text-sm text-monochrome-500 line-through">{Math.round(product.price * 1.25)} coins</span>
+              {discount > 0 && (
+                <span className="ml-2 rounded-full bg-monochrome-900 px-2 py-0.5 text-xs font-medium text-white">
+                  {discount}% OFF
+                </span>
+              )}
             </div>
           </div>
           
@@ -149,10 +228,14 @@ const ProductDetail = () => {
               <div className="space-y-2">
                 <p className="text-monochrome-500">Size</p>
                 <p className="text-monochrome-500">Condition</p>
+                {product.sku && <p className="text-monochrome-500">SKU</p>}
+                <p className="text-monochrome-500">Stock</p>
               </div>
               <div className="space-y-2">
                 <p>{product.size}</p>
                 <p>{product.condition}</p>
+                {product.sku && <p>{product.sku}</p>}
+                <p>{product.stock_quantity} available</p>
               </div>
             </div>
           </div>
@@ -165,9 +248,21 @@ const ProductDetail = () => {
           <Button 
             onClick={handleAddToCart} 
             className="mt-8 w-full rounded-full py-6 h-auto font-medium text-base shadow-md hover:shadow-lg transition-all"
+            disabled={isAddingToCart || product.stock_quantity <= 0}
           >
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            Add to Cart
+            {isAddingToCart ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Adding to Cart...
+              </>
+            ) : product.stock_quantity <= 0 ? (
+              'Out of Stock'
+            ) : (
+              <>
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                Add to Cart
+              </>
+            )}
           </Button>
         </div>
       </div>

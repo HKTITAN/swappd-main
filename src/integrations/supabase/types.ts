@@ -49,11 +49,23 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
-          size: string
+          size: string | null
           status: string
           swapcoins: number
           title: string
           user_id: string
+          // Additional fields for unified system
+          is_shop_item: boolean | null
+          stock_quantity: number | null
+          sku: string | null
+          price: number | null
+          approval_status: string | null
+          review_notes: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          convertible_to_inventory: boolean | null
+          estimated_value: number | null
+          images: string[] | null
         }
         Insert: {
           category: string
@@ -62,11 +74,23 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
-          size: string
+          size?: string | null
           status?: string
           swapcoins: number
           title: string
           user_id: string
+          // Additional fields for unified system
+          is_shop_item?: boolean | null
+          stock_quantity?: number | null
+          sku?: string | null
+          price?: number | null
+          approval_status?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          convertible_to_inventory?: boolean | null
+          estimated_value?: number | null
+          images?: string[] | null
         }
         Update: {
           category?: string
@@ -75,11 +99,23 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
-          size?: string
+          size?: string | null
           status?: string
           swapcoins?: number
           title?: string
           user_id?: string
+          // Additional fields for unified system
+          is_shop_item?: boolean | null
+          stock_quantity?: number | null
+          sku?: string | null
+          price?: number | null
+          approval_status?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          convertible_to_inventory?: boolean | null
+          estimated_value?: number | null
+          images?: string[] | null
         }
         Relationships: []
       }
@@ -176,6 +212,27 @@ export type Database = {
         }
         Relationships: []
       }
+      settings: {
+        Row: {
+          id: string
+          settings: Json
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          settings: Json
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          settings?: Json
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -219,7 +276,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_swapcoins: {
+        Args: {
+          amount: number
+        }
+        Returns: number
+      }
+      convert_to_inventory_item: {
+        Args: {
+          item_id: string
+        }
+        Returns: boolean
+      }
+      get_monthly_user_growth: {
+        Args: {
+          months_back: number
+        }
+        Returns: { date: string; count: number }[]
+      }
+      get_items_by_category: {
+        Args: Record<string, never>
+        Returns: { category: string; count: number }[]
+      }
+      get_monthly_transaction_volume: {
+        Args: {
+          months_back: number
+        }
+        Returns: { date: string; volume: number }[]
+      }
+      get_daily_active_users: {
+        Args: {
+          days_back: number
+        }
+        Returns: { date: string; active_users: number }[]
+      }
     }
     Enums: {
       [_ in never]: never

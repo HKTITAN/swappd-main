@@ -5,235 +5,110 @@ import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-
-// Mock product data - would come from API in real implementation
-const products = [
-  {
-    id: 1,
-    name: "Vintage Denim Jacket",
-    price: 120,
-    image: "https://images.unsplash.com/photo-1527576539890-dfa815648363?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Outerwear",
-    size: "M"
-  },
-  {
-    id: 2,
-    name: "Monochrome Striped Shirt",
-    price: 75,
-    image: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Tops",
-    size: "L"
-  },
-  {
-    id: 3,
-    name: "Classic Black Jeans",
-    price: 90,
-    image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800", 
-    category: "Bottoms",
-    size: "32"
-  },
-  {
-    id: 4,
-    name: "Minimalist Wool Coat",
-    price: 185,
-    image: "https://images.unsplash.com/photo-1452960962994-acf4fd70b632?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Outerwear",
-    size: "S"
-  },
-  {
-    id: 5,
-    name: "Oversized White T-Shirt",
-    price: 50,
-    image: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Tops",
-    size: "XL"
-  },
-  {
-    id: 6,
-    name: "Graphic Print Hoodie",
-    price: 110,
-    image: "https://images.unsplash.com/photo-1509942774463-acf339cf87d5?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800",
-    category: "Tops",
-    size: "M"
-  },
-];
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  size: string;
-}
+import { useShopProducts, ShopProduct } from "@/hooks/useShopProducts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SwipeViewProps {
-  onLike: (product: Product) => void;
-  onDislike: (product: Product) => void;
+  onLike: (product: ShopProduct) => void;
+  onDislike: (product: ShopProduct) => void;
   category?: string;
 }
 
 const SwipeView = ({ onLike, onDislike, category }: SwipeViewProps) => {
+  const { products, isLoading } = useShopProducts(category);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [swipeDirection, setSwipeDirection] = useState<string | null>(null);
-  const startX = useRef<number | null>(null);
-  const currentX = useRef<number | null>(null);
-  const [noItemsFound, setNoItemsFound] = useState(false);
-  const [showLikeOverlay, setShowLikeOverlay] = useState(false);
-  const [showDislikeOverlay, setShowDislikeOverlay] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [startPoint, setStartPoint] = useState<number | null>(null);
+  const [offsetX, setOffsetX] = useState(0);
+  const swipeThreshold = 100;
+  const noItemsFound = !isLoading && products.length === 0;
 
-  // Filter products based on category
-  const filteredProducts = category 
-    ? products.filter(product => product.category === category)
-    : products;
-
+  // Reset state when products change
   useEffect(() => {
-    setNoItemsFound(filteredProducts.length === 0);
-    setCurrentIndex(0);
-  }, [category, filteredProducts.length]);
+    if (products.length > 0) {
+      setCurrentIndex(0);
+      setSwipeDirection(null);
+      setOffsetX(0);
+    }
+  }, [products]);
 
+  // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
+    setStartPoint(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (startX.current === null) return;
-    
-    currentX.current = e.touches[0].clientX;
-    const diff = currentX.current - startX.current;
-    
-    // Apply rotation and translation directly to the card
-    const card = e.currentTarget as HTMLElement;
-    const rotate = diff * 0.1; // Adjust rotation intensity
-    card.style.transform = `translateX(${diff}px) rotate(${rotate}deg)`;
-    
-    // Show appropriate overlay based on direction
-    if (diff > 50) {
-      setShowLikeOverlay(true);
-      setShowDislikeOverlay(false);
-    } else if (diff < -50) {
-      setShowDislikeOverlay(true);
-      setShowLikeOverlay(false);
-    } else {
-      setShowLikeOverlay(false);
-      setShowDislikeOverlay(false);
-    }
+    if (startPoint === null) return;
+    const currentPoint = e.touches[0].clientX;
+    const diff = currentPoint - startPoint;
+    setOffsetX(diff);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (startX.current === null || currentX.current === null) return;
-    
-    const diff = currentX.current - startX.current;
-    const card = e.currentTarget as HTMLElement;
-    
-    // Reset transform to allow animation classes to take effect
-    card.style.transform = '';
-    
-    if (diff > 100) {
-      // Swiped right
+  const handleTouchEnd = () => {
+    if (startPoint === null) return;
+
+    if (offsetX > swipeThreshold) {
       setSwipeDirection('right');
       handleLike();
-    } else if (diff < -100) {
-      // Swiped left
+    } else if (offsetX < -swipeThreshold) {
       setSwipeDirection('left');
       handleDislike();
-    } else {
-      // Not enough movement, reset card position
-      card.style.transform = 'translateX(0) rotate(0)';
-      setShowLikeOverlay(false);
-      setShowDislikeOverlay(false);
     }
-    
-    startX.current = null;
-    currentX.current = null;
+
+    setStartPoint(null);
+    setOffsetX(0);
   };
 
+  // Mouse handlers for desktop
   const handleMouseDown = (e: React.MouseEvent) => {
-    startX.current = e.clientX;
+    setStartPoint(e.clientX);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (startX.current === null) return;
-    
-    currentX.current = e.clientX;
-    const diff = currentX.current - startX.current;
-    
-    const card = e.currentTarget as HTMLElement;
-    const rotate = diff * 0.1;
-    card.style.transform = `translateX(${diff}px) rotate(${rotate}deg)`;
-    
-    // Show appropriate overlay based on direction
-    if (diff > 50) {
-      setShowLikeOverlay(true);
-      setShowDislikeOverlay(false);
-    } else if (diff < -50) {
-      setShowDislikeOverlay(true);
-      setShowLikeOverlay(false);
-    } else {
-      setShowLikeOverlay(false);
-      setShowDislikeOverlay(false);
-    }
+    if (startPoint === null) return;
+    const currentPoint = e.clientX;
+    const diff = currentPoint - startPoint;
+    setOffsetX(diff);
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (startX.current === null || currentX.current === null) return;
-    
-    const diff = currentX.current - startX.current;
-    const card = e.currentTarget as HTMLElement;
-    
-    card.style.transform = '';
-    
-    if (diff > 100) {
+  const handleMouseUp = () => {
+    if (startPoint === null) return;
+
+    if (offsetX > swipeThreshold) {
       setSwipeDirection('right');
       handleLike();
-    } else if (diff < -100) {
+    } else if (offsetX < -swipeThreshold) {
       setSwipeDirection('left');
       handleDislike();
-    } else {
-      card.style.transform = 'translateX(0) rotate(0)';
-      setShowLikeOverlay(false);
-      setShowDislikeOverlay(false);
     }
-    
-    startX.current = null;
-    currentX.current = null;
+
+    setStartPoint(null);
+    setOffsetX(0);
   };
 
-  useEffect(() => {
-    if (swipeDirection) {
-      setShowLikeOverlay(swipeDirection === 'right');
-      setShowDislikeOverlay(swipeDirection === 'left');
-      
-      const timer = setTimeout(() => {
-        setSwipeDirection(null);
-        setShowLikeOverlay(false);
-        setShowDislikeOverlay(false);
-        
-        if (currentIndex < filteredProducts.length - 1) {
-          setCurrentIndex(currentIndex + 1);
-        } else {
-          // Reset to the beginning when all cards are swiped
-          setCurrentIndex(0);
-        }
-      }, 500); // Match this with the animation duration
-      
-      return () => clearTimeout(timer);
-    }
-  }, [swipeDirection, currentIndex, filteredProducts.length]);
-
   const handleLike = () => {
-    if (filteredProducts.length > 0) {
-      onLike(filteredProducts[currentIndex % filteredProducts.length]);
+    if (products.length > 0) {
+      const currentProduct = products[currentIndex % products.length];
+      onLike(currentProduct);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setSwipeDirection(null);
+      }, 300);
+      
       toast({
-        title: "Item saved!",
+        title: "Added to saved items",
         description: "This item has been added to your saved items",
       });
     }
   };
   
   const handleDislike = () => {
-    if (filteredProducts.length > 0) {
-      onDislike(filteredProducts[currentIndex % filteredProducts.length]);
+    if (products.length > 0) {
+      onDislike(products[currentIndex % products.length]);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setSwipeDirection(null);
+      }, 300);
     }
   };
 
@@ -248,12 +123,41 @@ const SwipeView = ({ onLike, onDislike, category }: SwipeViewProps) => {
     handleDislike();
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="mb-12">
+        <h2 className="text-3xl font-bold text-center mb-8">Discover Your Style</h2>
+        <p className="text-center text-monochrome-600 mb-10">
+          Swipe right to save items, left to pass. Find your perfect look!
+        </p>
+        
+        <div className="relative mx-auto max-w-md h-[500px] swipe-container">
+          <Card className="aspect-[3/4] overflow-hidden shadow-2xl rounded-3xl border-0 mx-auto">
+            <div className="h-full flex flex-col">
+              <Skeleton className="h-3/4 w-full" />
+              <div className="p-6">
+                <Skeleton className="h-4 w-3/4 mb-3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          </Card>
+          
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-12 w-12 rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (noItemsFound) {
     return (
       <div className="py-16 text-center">
         <h2 className="text-2xl font-bold mb-4">No items found</h2>
         <p className="text-monochrome-600 mb-8">
-          We couldn't find any items in the {category} category.
+          We couldn't find any items in the {category || 'selected'} category.
         </p>
         <Button onClick={() => window.location.reload()}>
           View All Items
@@ -262,7 +166,23 @@ const SwipeView = ({ onLike, onDislike, category }: SwipeViewProps) => {
     );
   }
 
-  const currentProduct = filteredProducts[currentIndex % filteredProducts.length];
+  // Handle case where we've swiped through all products
+  if (products.length > 0 && currentIndex >= products.length) {
+    return (
+      <div className="py-16 text-center">
+        <h2 className="text-2xl font-bold mb-4">You've seen all items</h2>
+        <p className="text-monochrome-600 mb-8">
+          You've gone through all available items in this category.
+        </p>
+        <Button onClick={() => setCurrentIndex(0)}>
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Start Over
+        </Button>
+      </div>
+    );
+  }
+
+  const currentProduct = products[currentIndex % products.length];
 
   return (
     <div className="mb-12">
@@ -281,7 +201,12 @@ const SwipeView = ({ onLike, onDislike, category }: SwipeViewProps) => {
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          style={{ touchAction: 'pan-y', height: '100%' }}
+          style={{ 
+            touchAction: 'pan-y', 
+            height: '100%',
+            transform: startPoint !== null ? `translateX(${offsetX}px) rotate(${offsetX * 0.1}deg)` : 'none',
+            transition: startPoint !== null ? 'none' : 'transform 0.3s'
+          }}
         >
           <div className="relative h-full bg-white rounded-3xl overflow-hidden">
             <Badge className="absolute top-4 left-4 z-10 bg-black text-white hover:bg-black/90 px-3 py-1.5 text-xs font-bold">
@@ -301,53 +226,29 @@ const SwipeView = ({ onLike, onDislike, category }: SwipeViewProps) => {
                 {currentProduct.category}
               </Badge>
               <h3 className="font-bold text-xl mt-2">{currentProduct.name}</h3>
-              <p className="text-monochrome-600 text-sm mt-1">Tap and drag to swipe</p>
-            </div>
-            
-            {/* Like overlay */}
-            <div className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-200 pointer-events-none
-                            ${showLikeOverlay ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="bg-green-500 bg-opacity-90 rounded-full p-6 transform scale-110 rotate-12">
-                <Heart className="h-12 w-12 text-white" fill="white" />
-              </div>
-            </div>
-            
-            {/* Dislike overlay */}
-            <div className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-200 pointer-events-none
-                            ${showDislikeOverlay ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="bg-red-500 bg-opacity-90 rounded-full p-6 transform scale-110 -rotate-12">
-                <X className="h-12 w-12 text-white" strokeWidth={3} />
-              </div>
+              {currentProduct.sku && (
+                <p className="text-xs text-monochrome-400 mt-1">SKU: {currentProduct.sku}</p>
+              )}
             </div>
           </div>
         </Card>
-      </div>
-      
-      <div className="flex justify-center gap-6 mt-10">
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="rounded-full w-16 h-16 border-2 border-red-500 bg-white hover:bg-red-100 shadow-lg" 
-          onClick={handleDislikeClick}
-        >
-          <X className="h-8 w-8 text-red-500" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="rounded-full w-16 h-16 border-2 border-green-500 bg-white hover:bg-green-100 shadow-lg" 
-          onClick={handleLikeClick}
-        >
-          <Heart className="h-8 w-8 text-green-500" />
-        </Button>
-      </div>
-      
-      <div className="text-center mt-10">
-        <Link to="/saved-items">
-          <Button variant="outline" className="rounded-full border-2 border-monochrome-900 font-bold hover:bg-monochrome-900 hover:text-white shadow-md">
-            VIEW SAVED ITEMS
+        
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
+          <Button 
+            size="icon" 
+            className="h-14 w-14 rounded-full bg-white text-red-500 hover:bg-red-100 shadow-lg"
+            onClick={handleDislikeClick}
+          >
+            <X className="h-6 w-6" />
           </Button>
-        </Link>
+          <Button 
+            size="icon" 
+            className="h-14 w-14 rounded-full bg-white text-green-500 hover:bg-green-100 shadow-lg"
+            onClick={handleLikeClick}
+          >
+            <Heart className="h-6 w-6" />
+          </Button>
+        </div>
       </div>
     </div>
   );

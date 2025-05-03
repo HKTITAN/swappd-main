@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -14,8 +13,10 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const HowItWorks = () => {
+  const isMobile = useIsMobile();
   const steps = [
     {
       number: "01",
@@ -48,7 +49,7 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section className="py-16 md:py-24 relative overflow-hidden">
+    <section className="py-12 md:py-24 relative overflow-hidden">
       {/* Enhanced background with decorative elements */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-0 left-0 right-0 h-full bg-gradient-to-b from-monochrome-100/80 via-white to-monochrome-100/50"></div>
@@ -57,41 +58,41 @@ const HowItWorks = () => {
       </div>
       
       <div className="container px-4 md:px-6 relative z-10">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16">
-          <div className="inline-block bg-monochrome-900 text-white px-4 py-1 rounded-full text-sm font-bold mb-2 animate-fade-in">
+        <div className="flex flex-col items-center justify-center space-y-3 md:space-y-4 text-center mb-10 md:mb-16">
+          <div className="inline-block bg-monochrome-900 text-white px-4 py-1 rounded-full text-sm font-bold mb-1 md:mb-2 animate-fade-in">
             The Swapping Process
           </div>
-          <div className="space-y-4">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+          <div className="space-y-2 md:space-y-4">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
               <span className="bg-gradient-to-r from-monochrome-900 to-monochrome-700 bg-clip-text text-transparent">
                 How It Works
               </span>
             </h2>
-            <p className="mx-auto max-w-[700px] text-monochrome-600 md:text-xl/relaxed">
+            <p className="mx-auto max-w-[700px] text-monochrome-600 text-base md:text-xl/relaxed">
               Turn your unused clothes into shopping credit with our simple 4-step process
             </p>
           </div>
         </div>
         
-        {/* Mobile view: Carousel layout */}
+        {/* Mobile view: Enhanced Carousel layout */}
         <div className="block md:hidden">
           <Carousel className="w-full mb-8">
-            <CarouselContent>
+            <CarouselContent className="-ml-2 md:-ml-4">
               {steps.map((step) => (
-                <CarouselItem key={step.number} className="pl-6">
+                <CarouselItem key={step.number} className="pl-2 md:pl-4 basis-[90%] sm:basis-[85%]">
                   <Card className="overflow-hidden border-none bg-white shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300 group h-full">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col gap-4 mb-4">
+                    <CardContent className="p-4 md:p-6">
+                      <div className="flex flex-col gap-3 md:gap-4 mb-2 md:mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-monochrome-900 text-white font-mono text-xl font-bold shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300">
+                          <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-monochrome-900 text-white font-mono text-lg md:text-xl font-bold shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300">
                             {step.number}
                           </div>
-                          <h3 className="text-2xl font-bold">{step.title}</h3>
+                          <h3 className="text-xl md:text-2xl font-bold">{step.title}</h3>
                         </div>
-                        <div className="pl-[3.25rem]">
-                          <p className="text-monochrome-600 text-lg">{step.description}</p>
+                        <div className="pl-[3rem]">
+                          <p className="text-monochrome-600 text-base md:text-lg">{step.description}</p>
                           
-                          <div className="mt-6 text-4xl opacity-10 group-hover:opacity-20 transition-opacity duration-300">
+                          <div className="mt-4 md:mt-6 text-4xl opacity-10 group-hover:opacity-20 transition-opacity duration-300">
                             {step.icon}
                           </div>
                         </div>
@@ -101,9 +102,10 @@ const HowItWorks = () => {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <div className="flex items-center justify-center gap-4 mt-6">
-              <CarouselPrevious className="relative transform-none mx-0 bg-monochrome-900 text-white hover:bg-monochrome-800 shadow-md" />
-              <CarouselNext className="relative transform-none mx-0 bg-monochrome-900 text-white hover:bg-monochrome-800 shadow-md" />
+            <div className="flex items-center justify-center gap-3 md:gap-4 mt-4 md:mt-6">
+              <CarouselPrevious className="relative transform-none mx-0 bg-monochrome-900 text-white hover:bg-monochrome-800 shadow-md h-8 w-8 md:h-10 md:w-10" />
+              <div className="text-xs text-monochrome-500">Swipe or use arrows</div>
+              <CarouselNext className="relative transform-none mx-0 bg-monochrome-900 text-white hover:bg-monochrome-800 shadow-md h-8 w-8 md:h-10 md:w-10" />
             </div>
           </Carousel>
         </div>
@@ -154,11 +156,11 @@ const HowItWorks = () => {
           </div>
         </div>
         
-        <div className="mt-16 flex justify-center">
+        <div className="mt-10 md:mt-16 flex justify-center">
           <Link to="/how-it-works">
-            <Button className="rounded-full bg-monochrome-900 hover:bg-monochrome-800 text-white shadow-md border-none px-8 py-6 h-auto text-lg font-medium transition-all duration-300 hover:shadow-lg">
+            <Button className={`rounded-full bg-monochrome-900 hover:bg-monochrome-800 text-white shadow-md border-none ${isMobile ? 'px-6 py-5 text-base' : 'px-8 py-6 text-lg'} h-auto font-medium transition-all duration-300 hover:shadow-lg`}>
               Learn the Full Process
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </Link>
         </div>

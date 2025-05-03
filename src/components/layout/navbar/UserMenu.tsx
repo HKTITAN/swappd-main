@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserCog, Shield, Coins, LogOut, ShoppingCart } from "lucide-react";
+import { UserCog, Shield, Coins, LogOut, ShoppingCart, Heart } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { User } from "@supabase/supabase-js";
 
@@ -49,10 +48,10 @@ export const UserMenu = ({
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => navigate("/cart")} 
+        onClick={() => navigate("/saved-items")} 
         className="relative"
       >
-        <ShoppingCart className="h-5 w-5" />
+        <Heart className="h-5 w-5" />
       </Button>
       
       <DropdownMenu>
