@@ -72,7 +72,7 @@ const SavedItems = () => {
                     <h3 className="mt-2 font-medium">{item.name}</h3>
                     <Link to={`/shop/product/${item.id}`} className="mt-3 block">
                       <Button variant="outline" size="sm" className="rounded-full w-full border-2 border-monochrome-900 hover:bg-monochrome-900 hover:text-white">
-                        View Details
+                        Add to Cart
                       </Button>
                     </Link>
                   </div>
